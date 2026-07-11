@@ -1,0 +1,17 @@
+{
+   "Body" : {
+      "Data" : {}
+   },
+   "Head" : {
+      "RequestArguments" : {
+         "DeviceId" : "0",
+         "Scope" : "Device"
+      },
+      "Status" : {
+         "Code" : 12,
+         "Reason" : "OhmPilot '0' does not exist.",
+         "UserMessage" : ""
+      },
+      "Timestamp" : "2023-01-21T17:59:23+00:00"
+   }
+}

@@ -1,0 +1,123 @@
+GET /solar_api/v1/GetPowerFlowRealtimeData.fcgi?Scope=Device&DeviceId=0 HTTP/1.1
+Host: 192.168.178.146
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
+Accept-Language: en,*
+User-Agent: Mozilla/5.0
+
+
+HTTP/1.1 200 OK
+Content-Type: application/json 
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+Content-Length: 898
+Date: Thu, 11 Aug 2022 17:31:20 GMT
+Server: webserver
+
+{
+   "Body" : {
+      "Data" : {
+         "Inverters" : {
+            "1" : {
+               "DT" : 233,
+               "E_Day" : 81980,
+               "E_Total" : 7138370,
+               "E_Year" : 7138379.5,
+               "P" : 341
+            }
+         },
+         "Site" : {
+            "E_Day" : 81980,
+            "E_Total" : 7138370,
+            "E_Year" : 7138379.5,
+            "Meter_Location" : "unknown",
+            "Mode" : "produce-only",
+            "P_Akku" : null,
+            "P_Grid" : null,
+            "P_Load" : null,
+            "P_PV" : 341,
+            "rel_Autonomy" : null,
+            "rel_SelfConsumption" : null
+         },
+         "Version" : "12"
+      }
+   },
+   "Head" : {
+      "RequestArguments" : {},
+      "Status" : {
+         "Code" : 0,
+         "Reason" : "",
+         "UserMessage" : ""
+      },
+      "Timestamp" : "2022-08-11T19:31:20+02:00"
+   }
+}
+
+GET /solar_api/v1/GetStorageRealtimeData.cgi?Scope=Device&DeviceId=0 HTTP/1.1
+Host: 192.168.178.146
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
+Accept-Language: en,*
+User-Agent: Mozilla/5.0
+
+
+HTTP/1.1 200 OK
+Content-Type: application/json 
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+Content-Length: 306
+Date: Thu, 11 Aug 2022 17:31:20 GMT
+Server: webserver
+
+{
+   "Body" : {
+      "Data" : {}
+   },
+   "Head" : {
+      "RequestArguments" : {},
+      "Status" : {
+         "Code" : 255,
+         "Reason" : "GetStorageRealtimeData request is not supported by this device.",
+         "UserMessage" : ""
+      },
+      "Timestamp" : "2022-08-11T19:31:20+02:00"
+   }
+}
+
+GET /solar_api/v1/GetOhmPilotRealtimeData.cgi?Scope=Device&DeviceId=0 HTTP/1.1
+Host: 192.168.178.146
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
+Accept-Language: en,*
+User-Agent: Mozilla/5.0
+
+
+HTTP/1.1 200 OK
+Content-Type: application/json 
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+Content-Length: 368
+Date: Thu, 11 Aug 2022 17:31:20 GMT
+Server: webserver
+
+{
+   "Body" : {
+      "Data" : {}
+   },
+   "Head" : {
+      "RequestArguments" : {
+         "DeviceClass" : "OhmPilot",
+         "DeviceId" : "0",
+         "Scope" : "Device"
+      },
+      "Status" : {
+         "Code" : 12,
+         "Reason" : "DeviceId '0' does not exist",
+         "UserMessage" : ""
+      },
+      "Timestamp" : "2022-08-11T19:31:20+02:00"
+   }
+}
