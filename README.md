@@ -236,6 +236,212 @@ Damit haben wir jetzt eine belastbare Vorlage für den nächsten Schritt:
 
 > **Einen Fronius-Hybrid so zu simulieren, dass die IDM-Wärmepumpe genau die Antworten bekommt, die sie erwartet.**
 
+## Woher die fehlenden Daten überhaupt kommen
+
+Die gute Nachricht ist: Die fehlenden Informationen waren in meinem Aufbau **nicht komplett weg**. Sie lagen nur **nicht in der Form vor, die die IDM-Wärmepumpe von einem Fronius-Hybrid erwartet**.
+
+Aktuell liefert die **SENEC-Batterie** schon fast alles, was wir brauchen:
+
+- Sie kennt den **Netzbezug / die Netzeinspeisung**
+- Sie kennt ihre **eigenen Batteriedaten**
+- Sie kennt den **Ladezustand der Batterie**
+- Sie bekommt vom **Fronius** die **PV-Leistung**
+
+Das eigentliche Problem ist also nicht fehlende Messung, sondern fehlende **Übersetzung**.
+
+Sehr hilfreich ist dabei das GitHub-Projekt:
+
+- <https://github.com/mchwalisz/pysenec>
+
+Mit `pysenec` lässt sich die SENEC-Batterie mit ihren Details auslesen. Dadurch wird der Hack konzeptionell viel einfacher:
+
+> **Wir müssen nicht selbst alle Energiedaten neu erfinden. Wir müssen im Kern nur von SENEC nach Fronius GEN24 übersetzen.**
+
+## Der umgesetzte Plan
+
+Der Plan, der hier umgesetzt wird, sieht so aus:
+
+![Ist + Hack: Ein Laptop sitzt zwischen SENEC/Fronius und Wärmepumpe und liefert der WP die erwarteten Hybrid-Informationen](Slide4.png)
+
+In einfachen Worten:
+
+- Der echte Fronius bleibt im System
+- Die SENEC-Batterie bleibt ebenfalls im System
+- Ein **Laptop als Hack** liest die verfügbaren Daten aus
+- Dieser Laptop spricht zur Wärmepumpe so, als wäre er ein **passender Fronius-Hybridwechselrichter**
+
+Damit wird aus dem Ist-Zustand kein kompletter Soll-Zustand mit neuer Hardware, aber ein **funktionierender Zwischenschritt**, den die Wärmepumpe versteht.
+
+In meinem Fall ist dieser Hack-Rechner einfach ein **sehr altes Laptop**, das ich noch hatte. Das ist keine besondere Spezialhardware. Man könnte dafür zum Beispiel genauso gut auch einen **Raspberry Pi (Raspi)** verwenden, solange er dauerhaft im Netzwerk läuft und die beiden Aufgaben übernehmen kann.
+
+In der Praxis habe ich den **echten Fronius SYMO (non-hybrid)** für diesen Aufbau **offline genommen**. Der Grund ist einfach:
+
+- Die Wärmepumpe sucht per Broadcast nach einem Fronius
+- Wenn mehrere Geräte auf diesen Broadcast antworten, kann das die WP verwirren
+- Für den Hack soll deshalb nur der **Fake Fronius** auf diese Suche antworten
+
+Außerdem ist wichtig:
+
+- Der Fake Fronius ist erst dann wirklich „aktiv“, wenn **beide Skripte gleichzeitig laufen**
+- `receive_UDP.py` übernimmt das **Finden**
+- `fake_fronius.py` übernimmt die **SolarAPI-Antworten**
+
+Erst zusammen bilden sie aus Sicht der Wärmepumpe einen brauchbaren **Fake Fronius**.
+
+## So sieht die IDM-Wärmepumpe danach aus
+
+Wenn die Wärmepumpe über den Hack die richtigen Informationen bekommt, werden die Daten sauber erkannt und in der IDM-Oberfläche auch korrekt dargestellt:
+
+![IDM-Wärmepumpe mit allen relevanten Informationen aus PV, Batterie und Hausverbrauch](IDM_mit_allen_Infos.png)
+
+Das ist für mich ein sehr wichtiger Punkt:
+
+- Die **IDM-Wärmepumpe kann wunderbar regeln**, sobald die Informationen richtig ankommen
+- Man sieht hier, dass **PV**, **Batterie**, **Netz** und **Verbrauch** korrekt geliefert und erkannt werden
+
+Deshalb gehört an dieser Stelle auch ein ausdrückliches **Kompliment an IDM**:
+
+> **Sobald die Infos richtig kommen, regelt die Wärmepumpe wunderbar.**
+
+## Wichtige Einordnung
+
+Mir ist wichtig, das fair zu sagen:
+
+- Die einzelnen Komponenten funktionieren **für sich betrachtet gut**
+- Die **IDM-Wärmepumpe** funktioniert gut
+- Der **Fronius-Wechselrichter** funktioniert gut
+- Die **SENEC-Batterie** funktioniert gut
+
+Das Problem war in meinem Fall nicht, dass eines dieser Geräte grundsätzlich schlecht wäre.
+
+Das Problem war das **Zusammenspiel**:
+
+- Der Installateur hat nicht ausreichend beachtet, ob die konkret bestellten Komponenten **im Energiemanagement wirklich sauber zusammenarbeiten**
+- Genau diese fehlende Abstimmung hat dazu geführt, dass die Wärmepumpe zwar einen Fronius findet, aber nicht die erwarteten Hybrid-Informationen bekommt
+
+## Wie die beiden Skripte den Hack umsetzen
+
+Die beiden zentralen Dateien in diesem Repository sind:
+
+- [`receive_UDP.py`](receive_UDP.py)
+- [`fake_fronius.py`](fake_fronius.py)
+
+Sie passen sehr genau zu dem, was im Netzwerk-Mitschnitt zu sehen ist.
+
+### `receive_UDP.py`: Fronius finden lassen
+
+Dieses Skript bildet den **ersten Schritt** der Kommunikation nach:
+
+- Die IDM-Wärmepumpe sendet einen UDP-Broadcast auf Port `50052`
+- `receive_UDP.py` wartet genau auf diese Anfrage
+- Wenn die Anfrage passt, antwortet das Skript mit einer Datamanager-ähnlichen JSON-Antwort
+
+Das ist genau die Rolle, die wir im Trace schon gesehen haben:
+
+- Die Wärmepumpe sucht einen **Fronius Datamanager**
+- Das Skript antwortet so, dass die Wärmepumpe einen passenden Ansprechpartner zu finden glaubt
+
+Das `RESPONSE`-Objekt ist also keine Zufallszeichenkette, sondern eine **nachgebildete Fronius-Erkennungsantwort**.
+
+Wichtig für das Verständnis:
+
+- Die Form dieser Antwort stammt aus dem **echten UDP-Mitschnitt**
+- Felder wie `DeviceFamily`, `Hardware`, `Id`, `Label`, `Model` und `Software` orientieren sich direkt an der real beobachteten Datamanager-Antwort aus dem Trace
+
+### `fake_fronius.py`: Die drei erwarteten SolarAPI-Antworten liefern
+
+Dieses Skript bildet den **zweiten Schritt** nach:
+
+- Nachdem die Wärmepumpe ihren „Fronius“ gefunden hat, ruft sie die drei bekannten SolarAPI-Endpunkte auf
+- `fake_fronius.py` stellt genau diese Endpunkte bereit:
+  - `GetPowerFlowRealtimeData.fcgi`
+  - `GetStorageRealtimeData.cgi`
+  - `GetOhmPilotRealtimeData.cgi`
+
+Dabei macht das Skript genau das, was wir aus der bisherigen Analyse erwarten würden:
+
+- Es liest Daten aus der **SENEC-Batterie**
+- Es übersetzt diese Daten in eine Form, die wie ein **Fronius GEN24** aussieht
+- Es liefert für OhmPilot eine plausible Antwort vom Typ **„gibt es nicht“**, passend zu einem System ohne OhmPilot
+
+Die Herkunft der Informationen ist damit sauber getrennt:
+
+- Die **Live-Werte** kommen von der **SENEC-Batterie**
+- Die **Zielstruktur** der JSON-Antworten kommt aus der **Fronius SolarAPI-Doku** und aus den **echten GEN24-Beispielen**
+
+Anders gesagt:
+
+- `receive_UDP.py` sorgt dafür, dass die Wärmepumpe den Ansprechpartner findet
+- `fake_fronius.py` sorgt dafür, dass sie danach **die richtigen Antworten** bekommt
+
+## Was in `fake_fronius.py` konkret übersetzt wird
+
+Die Parallele zur bisherigen Doku ist klar sichtbar:
+
+- Die Wärmepumpe fragt nach **Power Flow**
+- Die Wärmepumpe fragt nach **Storage**
+- Die Wärmepumpe fragt nach **OhmPilot**
+
+Und genau dafür baut `fake_fronius.py` Antworten:
+
+- `GetPowerFlowRealtimeData()` liefert Fronius-artige Werte wie:
+  - `Mode: "bidirectional"`
+  - `P_Grid`
+  - `P_Load`
+  - `P_Akku`
+  - `P_PV`
+  - `rel_Autonomy`
+  - `rel_SelfConsumption`
+  - `SOC`
+  - `Battery_Mode`
+- `GetStorageRealtimeData()` liefert Fronius-/BYD-artige Speicherinformationen wie:
+  - `Capacity_Maximum`
+  - `DesignedCapacity`
+  - `Current_DC`
+  - `Voltage_DC`
+  - `Temperature_Cell`
+  - `StateOfCharge_Relative`
+  - `Status_BatteryCell`
+- `GetOhmPilotRealtimeData()` liefert bewusst eine gültige Antwort mit **Fehlercode 12**, weil kein OhmPilot vorhanden ist
+
+Genau das ist die praktische Übersetzung **von SENEC nach Fronius GEN24**.
+
+## Warum der `Memorizer` existiert
+
+In `fake_fronius.py` gibt es die Klasse `Memorizer`.
+
+Die Idee dahinter ist schlicht:
+
+- Die IDM-Wärmepumpe schickt pro Zyklus **drei schnelle Abfragen direkt hintereinander**
+- Ohne Zwischenspeicher würde das dazu führen, dass auf diese drei IDM-Abfragen im schlimmsten Fall auch **drei direkte Abfragen an die SENEC** folgen
+
+Der `Memorizer` speichert deshalb das letzte Ergebnis einfach **kurz zwischen** und verwendet es für die unmittelbar folgenden Antworten weiter.
+
+Wichtig:
+
+- Das ist **nicht zwingend notwendig**
+- Es **schadet aber auch nicht**
+- Es vermeidet vor allem unnötige Mehrfachabfragen derselben aktuellen Daten
+
+Kurz gesagt:
+
+> Der `Memorizer` ist ein kleiner Puffer, damit aus 3 schnellen WP-Abfragen nicht sofort 3 fast identische SENEC-Abfragen werden.
+
+## Wie oft die IDM-Wärmepumpe neue Infos abruft
+
+Aus dem Netzwerk-Trace lässt sich außerdem erkennen:
+
+- Die IDM-Wärmepumpe ruft **ungefähr alle 5 Minuten** neue Informationen ab
+
+Das sieht man im Mitschnitt rund um den UDP-Broadcast und die danach folgende TCP/HTTP-Kommunikation:
+
+![UDP-Broadcast der IDM Wärmepumpe; daran erkennt man auch den wiederkehrenden Abrufzyklus](01_udp_broadcast.png)
+
+Praktisch bedeutet das:
+
+- Etwa alle 5 Minuten startet wieder ein neuer Such- und Abfragezyklus
+- Innerhalb dieses Zyklus folgen dann wieder dieselben drei SolarAPI-Abfragen
+
 ## Was der echte non-hybrid Fronius zurückliefert
 
 Die Antworten erklären, warum das Energiemanagement scheitert.
