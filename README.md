@@ -25,6 +25,26 @@ Die Wärmepumpe war trotzdem auf **„Fronius“** eingestellt. Sie hat also ver
 
 Genau deshalb entstand der Hack: **Ein Hybridwechselrichter wird simuliert**, damit der Wärmepumpe endlich die fehlenden Informationen bereitgestellt werden können.
 
+## Wichtiger Hinweis: Das ist ein Hack, kein fertiges Produkt
+
+Dieses Repository zeigt **einen funktionierenden Hack für meinen ganz konkreten Aufbau**. Es ist **kein fertiges Produkt** und erhebt **keinen Anspruch auf Production Readiness**.
+
+Das ist wichtig, weil im Code an mehreren Stellen Dinge **hart verdrahtet** sind, zum Beispiel:
+
+- IP-Adressen
+- Geräteannahmen
+- Antwortfelder
+- feste Zuordnungen zwischen **SENEC** und **Fronius**
+- bewusst vereinfachte Antworten für genau meinen Anwendungsfall
+
+Deshalb sollte man dieses Repository so lesen:
+
+- als **Inspiration**
+- als **Dokumentation eines funktionierenden Ansatzes**
+- als **Startpunkt für einen eigenen Aufbau**
+
+Aber eben **nicht** als allgemeingültige, sofort produktionsreife Lösung für beliebige Anlagen.
+
 ## Wichtige Voraussetzung
 
 Ein wichtiger Punkt bei meinem Aufbau war:
