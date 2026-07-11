@@ -25,6 +25,21 @@ Die Wärmepumpe war trotzdem auf **„Fronius“** eingestellt. Sie hat also ver
 
 Genau deshalb entstand der Hack: **Ein Hybridwechselrichter wird simuliert**, damit der Wärmepumpe endlich die fehlenden Informationen bereitgestellt werden können.
 
+## Wichtige Voraussetzung
+
+Ein wichtiger Punkt bei meinem Aufbau war:
+
+- Ich hatte **niemals Administrator-Zugang zur Wärmepumpe**
+- Die Wärmepumpe stand bereits auf **„Fronius“**
+- Ich wollte an der eigentlichen Anlage **nichts direkt verändern**
+- Mein Ziel war, **außen herum zu arbeiten**, statt in die bestehende Konfiguration der WP einzugreifen
+
+Das ist wichtig für das Verständnis des Hacks:
+
+- Ich habe die Wärmepumpe nicht intern umprogrammiert
+- Ich habe keine versteckten Service-Einstellungen benutzt
+- Ich habe stattdessen versucht, der bereits auf **Fronius** eingestellten WP von außen genau die Antworten zu liefern, die sie erwartet
+
 ## Mein Aufbau
 
 - **Wärmepumpe:** `192.168.178.61`
